@@ -86,15 +86,6 @@ int main() {
     cout << "\nTotal weight loaded: " << (W - remaining) << " / " << W << " kg\n";
     cout << "Total revenue earned: " << totalRevenue << "\n";
 
-    cout << "\n--- Complexity Analysis ---\n";
-    cout << "Sorting by ratio: O(n log n). Greedy loading pass: O(n). Overall: O(n log n).\n";
-    cout << "Space: O(n) for storing cargo items.\n";
-    cout << "IMPORTANT CAVEAT: pure Fractional Knapsack is optimal only when every item\n";
-    cout << "can be split. Mixing in indivisible cargo (machinery, cars) turns this into a\n";
-    cout << "hybrid Fractional/0-1 Knapsack problem -- NP-hard in the general case. The\n";
-    cout << "greedy-by-ratio approach here is the standard fast heuristic and performs well\n";
-    cout << "in practice, but a guaranteed optimal loading plan when heavy indivisible items\n";
-    cout << "are involved would require 0/1 Knapsack dynamic programming, O(n * W).\n";
 
     return 0;
 }
