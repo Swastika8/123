@@ -1,0 +1,108 @@
+// 1-B: E-commerce Transactions — Merge Sort by purchase_timestamp
+// Compile: g++ -O2 -o ecommerce 1B_ecommerce_transactions_merge_sort.cpp
+// Run:     ./ecommerce
+// Input:   transactions.csv (auto-generated with 1,000,000 rows if missing)
+// Format:  transaction_id,customer,amount,purchase_timestamp ("YYYY-MM-DD HH:MM:SS")
+
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <string>
+#include <chrono>
+#include <random>
+
+using namespace std;
+
+struct Transaction {
+    long id;
+    string customer;
+    double amount;
+    string purchaseTimestamp; // ISO format sorts chronologically as string
+};
+
+// ---------- CSV I/O ----------
+vector<Transaction> readCSV(const string& filename) {
+    vector<Transaction> data;
+    ifstream file(filename);
+    string line;
+    while (getline(file, line)) {
+        if (line.empty()) continue;
+        stringstream ss(line);
+        string idStr, customer, amtStr, ts;
+        getline(ss, idStr, ',');
+        getline(ss, customer, ',');
+        getline(ss, amtStr, ',');
+        getline(ss, ts, ',');
+        data.push_back({stol(idStr), customer, stod(amtStr), ts});
+    }
+    return data;
+}
+
+void writeCSV(const string& filename, const vector<Transaction>& data) {
+    ofstream file(filename);
+    for (auto& t : data)
+        file << t.id << "," << t.customer << "," << t.amount << "," << t.purchaseTimestamp << "\n";
+}
+
+void generateSampleData(const string& filename, int n) {
+    ofstream file(filename);
+    mt19937 rng(42);
+    uniform_int_distribution<int> yr(2023, 2026), mo(1, 12), da(1, 28), hr(0, 23), mi(0, 59), se(0, 59);
+    uniform_real_distribution<double> amt(5.0, 5000.0);
+    for (int i = 1; i <= n; i++) {
+        char buf[32];
+        snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d",
+                 yr(rng), mo(rng), da(rng), hr(rng), mi(rng), se(rng));
+        file << i << ",Customer_" << (i % 50000) << "," << amt(rng) << "," << buf << "\n";
+    }
+}
+
+// ---------- Merge Sort ----------
+void merge(vector<Transaction>& arr, int l, int m, int r) {
+    vector<Transaction> left(arr.begin() + l, arr.begin() + m + 1);
+    vector<Transaction> right(arr.begin() + m + 1, arr.begin() + r + 1);
+
+    size_t i = 0, j = 0;
+    int k = l;
+    while (i < left.size() && j < right.size())
+        arr[k++] = (left[i].purchaseTimestamp <= right[j].purchaseTimestamp) ? left[i++] : right[j++];
+    while (i < left.size()) arr[k++] = left[i++];
+    while (j < right.size()) arr[k++] = right[j++];
+}
+
+void mergeSort(vector<Transaction>& arr, int l, int r) {
+    if (l >= r) return;
+    int m = l + (r - l) / 2;
+    mergeSort(arr, l, m);
+    mergeSort(arr, m + 1, r);
+    merge(arr, l, m, r);
+}
+
+int main() {
+    const string inputFile = "transactions.csv";
+    const int SAMPLE_SIZE = 1000000;
+
+    ifstream test(inputFile);
+    if (!test.good()) {
+        cout << "No input file found. Generating " << SAMPLE_SIZE << " sample transactions...\n";
+        generateSampleData(inputFile, SAMPLE_SIZE);
+    }
+    test.close();
+
+    cout << "Reading data...\n";
+    vector<Transaction> transactions = readCSV(inputFile);
+    cout << "Loaded " << transactions.size() << " records.\n";
+
+    auto start = chrono::high_resolution_clock::now();
+    mergeSort(transactions, 0, (int)transactions.size() - 1);
+    auto end = chrono::high_resolution_clock::now();
+
+    chrono::duration<double> elapsed = end - start;
+    cout << "Merge Sort completed in " << elapsed.count() << " seconds.\n";
+
+    writeCSV("transactions_sorted.csv", transactions);
+    cout << "Sorted data written to transactions_sorted.csv\n";
+
+    return 0;
+}
